@@ -4,11 +4,10 @@ on:
   schedule:
     - cron: '0 16 * * *' 
   workflow_dispatch: # 允许手动触发
-#   push:
-#     branches:
-#       - main
+
 env:
-  PAT_TOKEN: ${{ secrets.PAT_TOKEN }} # Workflows Update GitHub Action workflow files. Learn more.  read and write access to the repository contents.  classic s
+  PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+
 permissions:
   contents: write  
   actions: write
@@ -17,12 +16,12 @@ jobs:
   update-cron:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-            token: ${{ secrets.PAT_TOKEN }}
-        # formula: RANDOM_NUM=$((RANDOM % (B - A + 1) + A))
-      - name: generate random time
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Generate random time
         id: random
         run: |
           HOUR=$((RANDOM % 17 + 7))
@@ -33,21 +32,24 @@ jobs:
           echo "utc_hour=$UTC_HOUR" >> $GITHUB_OUTPUT
           echo "北京时间 $HOUR:$MIN, UTC 时间 $UTC_HOUR:$MIN"
 
-      - name: replace cron expression
+      - name: Replace cron expression
         run: |
           sed -i "s/cron: '[^']*'/cron: '${{ steps.random.outputs.min }} ${{ steps.random.outputs.hour }} * * *'/" .github/workflows/cron_bypassCF_likeUser.yaml
           sed -i "s/cron: '[^']*'/cron: '${{ steps.random.outputs.min }} ${{ steps.random.outputs.utc_hour }} * * *'/" .github/workflows/cron_bypassCF.yaml
 
-      - name: Check PAT
+      - name: Check PAT token
         run: |
-            echo "PAT_TOKEN starts with: ${PAT_TOKEN:0:5}"
+          echo "PAT_TOKEN starts with: ${PAT_TOKEN:0:5}"
 
-      - name: commit and push changes
+      - name: Commit and push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 拉取远程最新代码，避免推送被拒
+          git pull origin main --rebase
+
           git add .
           git diff --cached --quiet || git commit -m "update cron ${{ steps.random.outputs.min }} ${{ steps.random.outputs.hour }} * * *"
-          git push "https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:main
 
-       
+          git push "https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:main
