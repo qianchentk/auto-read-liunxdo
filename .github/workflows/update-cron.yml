@@ -37,8 +37,14 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 自动stash未提交改动，拉取远程最新代码并rebase
-          git pull origin main --rebase --autostash
+          # 暂存当前改动，避免 pull 失败
+          git stash push -m "stash before pull"
+
+          # 拉取远程最新代码并 rebase
+          git pull origin main --rebase
+
+          # 恢复之前的改动
+          git stash pop
 
           # 替换 cron 表达式
           sed -i "s/cron: '[^']*'/cron: '${{ steps.random.outputs.min }} ${{ steps.random.outputs.hour }} * * *'/" .github/workflows/cron_bypassCF_likeUser.yaml
