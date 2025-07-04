@@ -2,8 +2,8 @@ name: Update Workflow Cron
 
 on:
   schedule:
-    - cron: '0 16 * * *'  # 每天 UTC 16:00 触发
-  workflow_dispatch:      # 允许手动触发
+    - cron: '0 16 * * *'
+  workflow_dispatch:
 
 env:
   PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
@@ -37,16 +37,10 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 暂存当前改动，避免 pull 失败
-          git stash push -m "stash before pull"
-
-          # 拉取远程最新代码并 rebase
+          git stash push -u -m "stash before pull" || echo "No changes to stash"
           git pull origin main --rebase
+          git stash pop || echo "No stash entries to pop"
 
-          # 恢复之前的改动
-          git stash pop
-
-          # 替换 cron 表达式
           sed -i "s/cron: '[^']*'/cron: '${{ steps.random.outputs.min }} ${{ steps.random.outputs.hour }} * * *'/" .github/workflows/cron_bypassCF_likeUser.yaml
           sed -i "s/cron: '[^']*'/cron: '${{ steps.random.outputs.min }} ${{ steps.random.outputs.utc_hour }} * * *'/" .github/workflows/cron_bypassCF.yaml
 
