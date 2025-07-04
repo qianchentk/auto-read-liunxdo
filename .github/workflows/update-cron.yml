@@ -40,13 +40,11 @@ jobs:
           # 自动stash未提交改动，拉取远程最新代码并rebase
           git pull origin main --rebase --autostash
 
-          # 替换 workflow 中的 cron 表达式
+          # 替换 cron 表达式
           sed -i "s/cron: '[^']*'/cron: '${{ steps.random.outputs.min }} ${{ steps.random.outputs.hour }} * * *'/" .github/workflows/cron_bypassCF_likeUser.yaml
           sed -i "s/cron: '[^']*'/cron: '${{ steps.random.outputs.min }} ${{ steps.random.outputs.utc_hour }} * * *'/" .github/workflows/cron_bypassCF.yaml
 
-          # 提交改动（如果有）
           git add .
           git diff --cached --quiet || git commit -m "update cron ${{ steps.random.outputs.min }} ${{ steps.random.outputs.hour }} * * *"
 
-          # 推送到远程仓库
           git push "https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:main
