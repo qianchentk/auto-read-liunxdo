@@ -3,7 +3,7 @@ name: Update Workflow Cron
 on:
   schedule:
     - cron: '0 16 * * *' 
-  workflow_dispatch: # 允许手动触发
+  workflow_dispatch:
 
 env:
   PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
@@ -32,24 +32,19 @@ jobs:
           echo "utc_hour=$UTC_HOUR" >> $GITHUB_OUTPUT
           echo "北京时间 $HOUR:$MIN, UTC 时间 $UTC_HOUR:$MIN"
 
-      - name: Replace cron expression
-        run: |
-          sed -i "s/cron: '[^']*'/cron: '${{ steps.random.outputs.min }} ${{ steps.random.outputs.hour }} * * *'/" .github/workflows/cron_bypassCF_likeUser.yaml
-          sed -i "s/cron: '[^']*'/cron: '${{ steps.random.outputs.min }} ${{ steps.random.outputs.utc_hour }} * * *'/" .github/workflows/cron_bypassCF.yaml
-
-      - name: Check PAT token
-        run: |
-          echo "PAT_TOKEN starts with: ${PAT_TOKEN:0:5}"
-
       - name: Commit and push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 拉取远程最新代码，避免推送被拒
+          # 先拉取远程最新代码，避免推送冲突
           git pull origin main --rebase
+
+          # 替换 cron 表达式
+          sed -i "s/cron: '[^']*'/cron: '${{ steps.random.outputs.min }} ${{ steps.random.outputs.hour }} * * *'/" .github/workflows/cron_bypassCF_likeUser.yaml
+          sed -i "s/cron: '[^']*'/cron: '${{ steps.random.outputs.min }} ${{ steps.random.outputs.utc_hour }} * * *'/" .github/workflows/cron_bypassCF.yaml
 
           git add .
           git diff --cached --quiet || git commit -m "update cron ${{ steps.random.outputs.min }} ${{ steps.random.outputs.hour }} * * *"
 
-          git push "https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:main
+          git push "https://x-access-token:${{ secrets
